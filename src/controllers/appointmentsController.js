@@ -12,8 +12,8 @@ exports.createAppointment = async (req, res) => {
     const existing = await prisma.appointment.findFirst({
       where: {
         serviceId: Number(serviceId),
-        date: dt
-      }
+        date: dt,
+      },
     });
     if (existing) return res.status(400).json({ error: 'Tijdslot al bezet' });
 
@@ -22,20 +22,28 @@ exports.createAppointment = async (req, res) => {
         userId,
         serviceId: Number(serviceId),
         date: dt,
-        notes
-      }
+        notes,
+      },
     });
 
     // E-mail notificaties (klant en admin)
-    const user = await prisma.user.findUnique({ where: { id: userId }});
-    const service = await prisma.service.findUnique({ where: { id: Number(serviceId) }});
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    const service = await prisma.service.findUnique({
+      where: { id: Number(serviceId) },
+    });
     const subject = 'Bevestiging afspraak bij Ayis Beauty';
     const html = `<p>Beste ${user.name || user.email},</p>
-      <p>Je afspraak voor <strong>${service.title}</strong> op <strong>${dt.toLocaleString()}</strong> is geregistreerd.</p>`;
+      <p>Je afspraak voor <strong>${
+        service.title
+      }</strong> op <strong>${dt.toLocaleString()}</strong> is geregistreerd.</p>`;
 
     // stuur naar klant en admin (asynchroon)
     sendBookingEmail(user.email, subject, html).catch(console.error);
-    sendBookingEmail(process.env.ADMIN_EMAIL, 'Nieuwe afspraak aangemaakt', `Nieuwe afspraak: ${user.email} - ${service.title} - ${dt.toISOString()}`).catch(console.error);
+    sendBookingEmail(
+      process.env.ADMIN_EMAIL,
+      'Nieuwe afspraak aangemaakt',
+      `Nieuwe afspraak: ${user.email} - ${service.title} - ${dt.toISOString()}`
+    ).catch(console.error);
 
     res.json({ appointment: appt });
   } catch (err) {
@@ -48,10 +56,17 @@ exports.listAppointments = async (req, res) => {
   // Als admin: alle afspraken, anders alleen van gebruiker
   const isAdmin = req.user.role === 'admin';
   if (isAdmin) {
-    const all = await prisma.appointment.findMany({ include: { user: true, service: true }, orderBy: { date: 'asc' }});
+    const all = await prisma.appointment.findMany({
+      include: { user: true, service: true },
+      orderBy: { date: 'asc' },
+    });
     return res.json({ appointments: all });
   } else {
-    const mine = await prisma.appointment.findMany({ where: { userId: req.user.userId }, include: { service: true }, orderBy: { date: 'asc' }});
+    const mine = await prisma.appointment.findMany({
+      where: { userId: req.user.userId },
+      include: { service: true },
+      orderBy: { date: 'asc' },
+    });
     return res.json({ appointments: mine });
   }
 };

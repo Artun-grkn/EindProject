@@ -12,10 +12,12 @@ const app = express();
 
 app.use(express.json());
 app.use(cookieParser());
-app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-  credentials: true
-}));
+app.use(
+  cors({
+    origin: process.env.FRONTEND_URL || 'http://localhost:8000',
+    credentials: true,
+  })
+);
 
 // routes
 app.use('/api/auth', authRoutes);
@@ -25,7 +27,7 @@ app.use('/api/appointments', appointmentRoutes);
 // error handler
 app.use((err, req, res, next) => {
   console.error(err.stack);
-  res.status(500).json({ error: "Er is iets misgegaan op de server." });
+  res.status(500).json({ error: 'Er is iets misgegaan op de server.' });
 });
 
 const PORT = process.env.PORT || 4000;
